@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Listing Search{% endblock %}
+{% block content %}
+<div class="row mb-4">
+  <div class="col-md-4">
+    <form method="get" class="card card-body">
+      <h5 class="card-title">Search Listings</h5>
+      <div class="mb-3">
+        <label for="suburb" class="form-label">Suburb or Region</label>
+        <input type="text" id="suburb" name="suburb" value="{{ suburb }}" class="form-control" placeholder="e.g. Belconnen">
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" value="on" id="needs_help" name="needs_help" {% if needs_help %}checked{% endif %}>
+        <label class="form-check-label" for="needs_help">
+          Only show listings where agents need buyers
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+  </div>
+</div>
+
+{% if listings %}
+  <div class="list-group">
+    {% for listing in listings %}
+      <div class="list-group-item">
+        <div class="d-flex w-100 justify-content-between">
+          <h5 class="mb-1">{{ listing.address }}{% if listing.suburb %}, {{ listing.suburb }}{% endif %}</h5>
+          {% if listing.date %}
+            <small>{{ listing.date.strftime('%d %b %Y') }}{% if listing.time %} at {{ listing.time }}{% endif %}</small>
+          {% endif %}
+        </div>
+        <p class="mb-1">{{ listing.description or 'No description has been provided yet.' }}</p>
+        <div class="mb-2">
+          <span class="badge text-bg-secondary">{{ listing.property_type or 'Type N/A' }}</span>
+          {% if listing.price %}<span class="badge text-bg-success">Price: {{ listing.price }}</span>{% endif %}
+          {% if listing.needs_help %}<span class="badge text-bg-warning text-dark">Agent needs buyers</span>{% endif %}
+        </div>
+        <small>
+          {% if listing.agent %}
+            Agent: {{ listing.agent.name }} ({{ listing.agent.office }}) | {{ listing.agent.phone or 'Phone N/A' }}
+          {% elif listing.agent_initials %}
+            Agent initials: {{ listing.agent_initials }}
+          {% endif %}
+        </small>
+        {% if listing.listing_link %}
+          <div><a href="{{ listing.listing_link }}" target="_blank" rel="noopener">View listing</a></div>
+        {% endif %}
+        {% if listing.images %}
+          <div class="mt-2 d-flex flex-wrap gap-2">
+            {% for image in listing.images %}
+              <img src="{{ url_for('uploaded_file', filename=image.filename) }}" class="thumbnail" alt="Listing image">
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="alert alert-info">No listings match your filters yet.</div>
+{% endif %}
+{% endblock %}
