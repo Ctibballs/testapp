@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Iterable
@@ -19,7 +20,7 @@ from werkzeug.utils import secure_filename
 
 from .models import Agent, Listing, ListingImage, db
 
-UPLOAD_FOLDER = Path("app/static/uploads")
+UPLOAD_SUBDIR = Path("uploads")
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 OFFICES = [
     "Kippax",
@@ -39,7 +40,9 @@ def create_app(database_uri: str | None = None) -> Flask:
     app.config["SECRET_KEY"] = "change-me"
     app.config["SQLALCHEMY_DATABASE_URI"] = database_uri or "sqlite:///realestate.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["UPLOAD_FOLDER"] = str(UPLOAD_FOLDER)
+    upload_folder = Path(app.root_path) / "static" / UPLOAD_SUBDIR
+    upload_folder.mkdir(parents=True, exist_ok=True)
+    app.config["UPLOAD_FOLDER"] = str(upload_folder)
 
     db.init_app(app)
 
@@ -65,20 +68,124 @@ def parse_date(value: str | None) -> datetime | None:
     return None
 
 
+def _parse_positive_int(raw_value: str | None) -> int | None:
+    if raw_value is None or raw_value == "":
+        return None
+    try:
+        value = int(raw_value)
+    except (TypeError, ValueError):
+        return None
+    return value if value >= 0 else None
+
+
+def _extract_numeric(value: str | None) -> float | None:
+    if not value:
+        return None
+    cleaned = value.replace(",", "")
+    match = re.search(r"\d+(?:\.\d+)?", cleaned)
+    if not match:
+        return None
+    try:
+        return float(match.group())
+    except ValueError:
+        return None
+
+
+def _extract_price(value: str | None) -> int | None:
+    numeric = _extract_numeric(value)
+    if numeric is None:
+        return None
+    return int(round(numeric))
+
+
+def _matches_numeric_filters(
+    listing: Listing,
+    *,
+    bedrooms: int | None,
+    bathrooms: int | None,
+    garages: int | None,
+    price_min: int | None,
+    price_max: int | None,
+) -> bool:
+    bed_value = _extract_numeric(listing.bed)
+    if bedrooms is not None and (bed_value is None or bed_value < bedrooms):
+        return False
+
+    bath_value = _extract_numeric(listing.bath)
+    if bathrooms is not None and (bath_value is None or bath_value < bathrooms):
+        return False
+
+    gar_value = _extract_numeric(listing.gar)
+    if garages is not None and (gar_value is None or gar_value < garages):
+        return False
+
+    price_value = _extract_price(listing.price)
+    if price_min is not None and (price_value is None or price_value < price_min):
+        return False
+    if price_max is not None and (price_value is None or price_value > price_max):
+        return False
+
+    return True
+
+
 def register_routes(app: Flask) -> None:
     @app.route("/")
     def index():
-        needs_help = request.args.get("needs_help") == "on"
-        suburb = request.args.get("suburb", "").strip()
+        filters = {
+            "needs_help": request.args.get("needs_help") == "on",
+            "suburb": request.args.get("suburb", "").strip(),
+            "bedrooms": _parse_positive_int(request.args.get("bedrooms")),
+            "bathrooms": _parse_positive_int(request.args.get("bathrooms")),
+            "garages": _parse_positive_int(request.args.get("garages")),
+            "price_min": _parse_positive_int(request.args.get("price_min")),
+            "price_max": _parse_positive_int(request.args.get("price_max")),
+            "property_type": request.args.get("property_type", "").strip(),
+            "office": request.args.get("office", "").strip(),
+        }
 
         query = Listing.query
-        if needs_help:
+        if filters["needs_help"]:
             query = query.filter_by(needs_help=True)
-        if suburb:
-            query = query.filter(Listing.suburb.ilike(f"%{suburb}%"))
+        if filters["suburb"]:
+            query = query.filter(Listing.suburb.ilike(f"%{filters['suburb']}%"))
+        if filters["property_type"]:
+            query = query.filter(Listing.property_type.ilike(f"%{filters['property_type']}%"))
+        if filters["office"]:
+            query = query.filter(Listing.office == filters["office"])
 
         listings = query.order_by(Listing.date.asc().nullslast()).all()
-        return render_template("index.html", listings=listings, suburb=suburb, needs_help=needs_help)
+
+        listings = [
+            listing
+            for listing in listings
+            if _matches_numeric_filters(
+                listing,
+                bedrooms=filters["bedrooms"],
+                bathrooms=filters["bathrooms"],
+                garages=filters["garages"],
+                price_min=filters["price_min"],
+                price_max=filters["price_max"],
+            )
+        ]
+
+        property_types = [
+            row[0]
+            for row in db.session.query(Listing.property_type)
+            .filter(Listing.property_type.isnot(None))
+            .filter(Listing.property_type != "")
+            .distinct()
+            .order_by(Listing.property_type.asc())
+            .all()
+        ]
+        offices = OFFICES
+
+        return render_template(
+            "index.html",
+            listings=listings,
+            filters=filters,
+            property_types=property_types,
+            offices=offices,
+        )
 
     @app.route("/uploads/<path:filename>")
     def uploaded_file(filename: str):
@@ -217,6 +324,11 @@ def register_routes(app: Flask) -> None:
         db.session.commit()
         flash("Image uploaded.", "success")
         return redirect(url_for("edit_listing", listing_id=listing_id))
+
+    @app.route("/listings/<int:listing_id>")
+    def listing_detail(listing_id: int):
+        listing = Listing.query.get_or_404(listing_id)
+        return render_template("listings/detail.html", listing=listing, offices=OFFICES)
 
     @app.route("/admin/listings/<int:listing_id>/images/<int:image_id>/delete", methods=["POST"])
     def delete_listing_image(listing_id: int, image_id: int):

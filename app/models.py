@@ -54,7 +54,13 @@ class Listing(db.Model):
     agent_id: Optional[int] = db.Column(db.Integer, db.ForeignKey("agent.id"), nullable=True)
     agent = db.relationship("Agent", back_populates="listings", lazy=True)
 
-    images = db.relationship("ListingImage", back_populates="listing", cascade="all, delete-orphan", lazy=True)
+    images = db.relationship(
+        "ListingImage",
+        back_populates="listing",
+        cascade="all, delete-orphan",
+        lazy=True,
+        order_by="ListingImage.id",
+    )
 
     def __repr__(self) -> str:  # pragma: no cover - simple repr helper
         return f"<Listing {self.address}>"

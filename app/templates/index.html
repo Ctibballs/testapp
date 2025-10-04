@@ -2,57 +2,104 @@
 {% block title %}Listing Search{% endblock %}
 {% block content %}
 <div class="row mb-4">
-  <div class="col-md-4">
-    <form method="get" class="card card-body">
+  <div class="col-lg-4">
+    <form method="get" class="card card-body g-3">
       <h5 class="card-title">Search Listings</h5>
       <div class="mb-3">
         <label for="suburb" class="form-label">Suburb or Region</label>
-        <input type="text" id="suburb" name="suburb" value="{{ suburb }}" class="form-control" placeholder="e.g. Belconnen">
+        <input type="text" id="suburb" name="suburb" value="{{ filters.suburb }}" class="form-control" placeholder="e.g. Belconnen">
+      </div>
+      <div class="mb-3">
+        <label for="property_type" class="form-label">Property type</label>
+        <select id="property_type" name="property_type" class="form-select">
+          <option value="">Any type</option>
+          {% for option in property_types %}
+            <option value="{{ option }}" {% if filters.property_type == option %}selected{% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="office" class="form-label">Office</label>
+        <select id="office" name="office" class="form-select">
+          <option value="">All offices</option>
+          {% for office in offices %}
+            <option value="{{ office }}" {% if filters.office == office %}selected{% endif %}>{{ office }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="row g-2 mb-3">
+        <div class="col">
+          <label for="bedrooms" class="form-label">Min beds</label>
+          <input type="number" min="0" class="form-control" id="bedrooms" name="bedrooms" value="{{ filters.bedrooms or '' }}">
+        </div>
+        <div class="col">
+          <label for="bathrooms" class="form-label">Min baths</label>
+          <input type="number" min="0" class="form-control" id="bathrooms" name="bathrooms" value="{{ filters.bathrooms or '' }}">
+        </div>
+        <div class="col">
+          <label for="garages" class="form-label">Min garage</label>
+          <input type="number" min="0" class="form-control" id="garages" name="garages" value="{{ filters.garages or '' }}">
+        </div>
+      </div>
+      <div class="row g-2 mb-3">
+        <div class="col">
+          <label for="price_min" class="form-label">Min price</label>
+          <input type="number" min="0" step="1000" class="form-control" id="price_min" name="price_min" value="{{ filters.price_min or '' }}">
+        </div>
+        <div class="col">
+          <label for="price_max" class="form-label">Max price</label>
+          <input type="number" min="0" step="1000" class="form-control" id="price_max" name="price_max" value="{{ filters.price_max or '' }}">
+        </div>
       </div>
       <div class="form-check mb-3">
-        <input class="form-check-input" type="checkbox" value="on" id="needs_help" name="needs_help" {% if needs_help %}checked{% endif %}>
+        <input class="form-check-input" type="checkbox" value="on" id="needs_help" name="needs_help" {% if filters.needs_help %}checked{% endif %}>
         <label class="form-check-label" for="needs_help">
           Only show listings where agents need buyers
         </label>
       </div>
-      <button type="submit" class="btn btn-primary">Search</button>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Search</button>
+        <a class="btn btn-outline-secondary" href="{{ url_for('index') }}">Clear</a>
+      </div>
     </form>
   </div>
 </div>
 
 {% if listings %}
-  <div class="list-group">
+  <div class="row gy-4">
     {% for listing in listings %}
-      <div class="list-group-item">
-        <div class="d-flex w-100 justify-content-between">
-          <h5 class="mb-1">{{ listing.address }}{% if listing.suburb %}, {{ listing.suburb }}{% endif %}</h5>
-          {% if listing.date %}
-            <small>{{ listing.date.strftime('%d %b %Y') }}{% if listing.time %} at {{ listing.time }}{% endif %}</small>
+      <div class="col-md-6 col-xl-4">
+        <div class="card h-100 shadow-sm listing-card">
+          {% if listing.images %}
+            {% set cover = listing.images[0] %}
+            <img src="{{ url_for('static', filename='uploads/' ~ cover.filename) }}" class="card-img-top listing-card__image" alt="{{ listing.address }}">
           {% endif %}
-        </div>
-        <p class="mb-1">{{ listing.description or 'No description has been provided yet.' }}</p>
-        <div class="mb-2">
-          <span class="badge text-bg-secondary">{{ listing.property_type or 'Type N/A' }}</span>
-          {% if listing.price %}<span class="badge text-bg-success">Price: {{ listing.price }}</span>{% endif %}
-          {% if listing.needs_help %}<span class="badge text-bg-warning text-dark">Agent needs buyers</span>{% endif %}
-        </div>
-        <small>
-          {% if listing.agent %}
-            Agent: {{ listing.agent.name }} ({{ listing.agent.office }}) | {{ listing.agent.phone or 'Phone N/A' }}
-          {% elif listing.agent_initials %}
-            Agent initials: {{ listing.agent_initials }}
-          {% endif %}
-        </small>
-        {% if listing.listing_link %}
-          <div><a href="{{ listing.listing_link }}" target="_blank" rel="noopener">View listing</a></div>
-        {% endif %}
-        {% if listing.images %}
-          <div class="mt-2 d-flex flex-wrap gap-2">
-            {% for image in listing.images %}
-              <img src="{{ url_for('uploaded_file', filename=image.filename) }}" class="thumbnail" alt="Listing image">
-            {% endfor %}
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <h5 class="card-title mb-0">{{ listing.address }}</h5>
+                {% if listing.suburb %}<p class="text-muted mb-1">{{ listing.suburb }}</p>{% endif %}
+              </div>
+              {% if listing.needs_help %}
+                <span class="badge text-bg-warning text-dark">Needs buyers</span>
+              {% endif %}
+            </div>
+            <ul class="list-inline small text-muted mb-2">
+              {% if listing.property_type %}<li class="list-inline-item">{{ listing.property_type }}</li>{% endif %}
+              {% if listing.price %}<li class="list-inline-item">{{ listing.price }}</li>{% endif %}
+              {% if listing.bed %}<li class="list-inline-item">🛏 {{ listing.bed }}</li>{% endif %}
+              {% if listing.bath %}<li class="list-inline-item">🛁 {{ listing.bath }}</li>{% endif %}
+              {% if listing.gar %}<li class="list-inline-item">🚗 {{ listing.gar }}</li>{% endif %}
+            </ul>
+            <p class="card-text flex-grow-1">{{ listing.description or 'No description has been provided yet.' }}</p>
+            <div class="mt-3 d-flex justify-content-between align-items-center">
+              {% if listing.date %}
+                <small class="text-muted">{{ listing.date.strftime('%d %b %Y') }}{% if listing.time %} • {{ listing.time }}{% endif %}</small>
+              {% endif %}
+              <a class="btn btn-outline-primary btn-sm" href="{{ url_for('listing_detail', listing_id=listing.id) }}">View details</a>
+            </div>
           </div>
-        {% endif %}
+        </div>
       </div>
     {% endfor %}
   </div>

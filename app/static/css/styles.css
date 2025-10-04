@@ -23,3 +23,17 @@ body {
 .card-title {
   font-weight: 600;
 }
+
+.listing-card__image {
+  height: 220px;
+  object-fit: cover;
+}
+
+.listing-card .card-text {
+  font-size: 0.95rem;
+}
+
+.detail-image {
+  max-height: 500px;
+  object-fit: cover;
+}

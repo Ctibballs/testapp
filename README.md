@@ -6,9 +6,10 @@ This project provides an internal web portal for managing and searching real est
 
 - Upload listing spreadsheets (CSV) with auction details, compliance status, property specs, and agent initials.
 - Manage agent profiles linked to the initials used in spreadsheets, including contact details and office assignment.
-- Enrich listings with descriptions, links, and image galleries.
+- Enrich listings with descriptions, links, and image galleries, including a carousel view for agents.
 - Flag listings where agents need help finding a buyer and allow agents to filter by these opportunities.
-- Search listings by suburb/region and view agent contact information.
+- Search listings with suburb/region, property type, office, bedroom/bathroom/garage counts, and price range filters.
+- Open a dedicated property detail page to review full marketing information without leaving the portal.
 
 ## Technology
 

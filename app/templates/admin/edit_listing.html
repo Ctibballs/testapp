@@ -74,7 +74,7 @@
           <div class="d-flex flex-wrap gap-3">
             {% for image in listing.images %}
               <div class="position-relative thumbnail-wrapper">
-                <img src="{{ url_for('uploaded_file', filename=image.filename) }}" class="thumbnail" alt="Listing image">
+                <img src="{{ url_for('static', filename='uploads/' ~ image.filename) }}" class="thumbnail" alt="Listing image">
                 <form method="post" action="{{ url_for('delete_listing_image', listing_id=listing.id, image_id=image.id) }}" class="delete-form" onsubmit="return confirm('Remove this image?');">
                   <button type="submit" class="btn btn-sm btn-danger">Remove</button>
                 </form>
