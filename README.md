@@ -1,19 +1,27 @@
-# Real Estate Listings Portal
+# Real Estate Listings Portal (Full)
 
-A Flask web app for managing and searching real estate listings across the Canberra region.
+Internal portal for Canberra network listings.
 
-Features:
-- Upload listing spreadsheets (CSV) with property details and agent initials
-- Manage agent profiles with contact info and office assignment
-- Enrich listings with images, descriptions, and links
-- Flag listings where agents need help finding buyers
-- Search listings by suburb, office, or agent
+## Features
+- Upload CSV with headers: `date,time,address,development,suburb,seen,price,agent,office,com,type,bed,bath,gar,land,access,single level,RZ zoning,auctioneer`
+- Manage agents (initials → contact details, office)
+- Edit listings: description, listing URL, images
+- "Needs buyers" flag + filter
+- Search by office, suburb/region, keyword, needs buyers
 
-Run locally:
-```
+## Getting Started
+
+```bash
 python -m venv .venv
-source .venv/bin/activate  # (or .venv\Scripts\Activate.ps1 on Windows)
+# Windows
+.venv\Scripts\Activate.ps1
+# macOS/Linux
+# source .venv/bin/activate
+
 pip install -r requirements.txt
+cp .env.example .env
+flask --app app.app db-init
 flask --app app.app run --debug
 ```
-Then open http://127.0.0.1:5000/
+
+Open http://127.0.0.1:5000/
