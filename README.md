@@ -1,27 +1,58 @@
-# Real Estate Listings Portal (Full)
+# Real Estate Listings Portal
 
-Internal portal for Canberra network listings.
+This project provides an internal web portal for managing and searching real estate listings across the Canberra region.
 
 ## Features
-- Upload CSV with headers: `date,time,address,development,suburb,seen,price,agent,office,com,type,bed,bath,gar,land,access,single level,RZ zoning,auctioneer`
-- Manage agents (initials → contact details, office)
-- Edit listings: description, listing URL, images
-- "Needs buyers" flag + filter
-- Search by office, suburb/region, keyword, needs buyers
+
+- Upload listing spreadsheets (CSV) with auction details, compliance status, property specs, and agent initials.
+- Manage agent profiles linked to the initials used in spreadsheets, including contact details and office assignment.
+- Enrich listings with descriptions, links, and image galleries, including a carousel view for agents.
+- Flag listings where agents need help finding a buyer and allow agents to filter by these opportunities.
+- Search listings with suburb/region, property type, office, bedroom/bathroom/garage counts, and price range filters.
+- Open a dedicated property detail page to review full marketing information without leaving the portal.
+
+## Technology
+
+- Python 3.11+
+- Flask & Flask-SQLAlchemy
+- SQLite database (default)
 
 ## Getting Started
 
-```bash
-python -m venv .venv
-# Windows
-.venv\Scripts\Activate.ps1
-# macOS/Linux
-# source .venv/bin/activate
+1. **Install dependencies**
 
-pip install -r requirements.txt
-cp .env.example .env
-flask --app app.app db-init
-flask --app app.app run --debug
-```
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
 
-Open http://127.0.0.1:5000/
+2. **Run the application**
+
+   ```bash
+   flask --app app.app run --debug
+   ```
+
+   The site will be available at <http://127.0.0.1:5000/>.
+
+3. **Upload listings**
+
+   - Prepare a CSV file that includes the following column headers exactly as written:
+     `date`, `time`, `address`, `development`, `suburb`, `seen`, `price`, `agent`, `office`, `com`, `type`, `bed`, `bath`, `gar`, `land`, `access`, `single level`, `RZ zoning`, `auctioneer`.
+   - Navigate to **Admin → Upload Spreadsheet** to import listing data. Existing listings are matched by address.
+
+4. **Manage agents**
+
+   - Go to **Admin → Manage Agents** to create or update agent profiles. Ensure the initials match those found in spreadsheets so listings link correctly.
+
+5. **Edit listings**
+
+   - After importing, open **Admin → Manage Listings** to add descriptions, upload images, paste listing links, and toggle the "needs buyers" flag.
+
+## File uploads
+
+Uploaded images are stored in `app/static/uploads`. Ensure this directory is writable on the deployment server.
+
+## Environment configuration
+
+Set the `SQLALCHEMY_DATABASE_URI` environment variable before launching the app to use an alternative database backend if required.

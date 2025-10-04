@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body text-center">
+        <h5 class="card-title">Agents</h5>
+        <p class="display-6">{{ agent_count }}</p>
+        <a href="{{ url_for('manage_agents') }}" class="btn btn-outline-primary">Manage Agents</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body text-center">
+        <h5 class="card-title">Listings</h5>
+        <p class="display-6">{{ listing_count }}</p>
+        <a href="{{ url_for('list_admin_listings') }}" class="btn btn-outline-primary">View Listings</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body text-center">
+        <h5 class="card-title">Spreadsheet Upload</h5>
+        <p class="display-6">CSV</p>
+        <a href="{{ url_for('upload_listings') }}" class="btn btn-outline-primary">Upload Listings</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

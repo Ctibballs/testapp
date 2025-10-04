@@ -1,60 +1,78 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Optional
+
 from flask_sqlalchemy import SQLAlchemy
+
 
 db = SQLAlchemy()
 
-OFFICES = [
-    "Kippax", "Kaleen", "Canberra City", "Gungahlin",
-    "Tuggeranong", "Dickson", "Woden/Weston", "Country", "Projects"
-]
 
+@dataclass
 class Agent(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    initials = db.Column(db.String(8), unique=True, nullable=False)
-    first_name = db.Column(db.String(80))
-    last_name = db.Column(db.String(80))
-    email = db.Column(db.String(120))
-    phone = db.Column(db.String(40))
-    office = db.Column(db.String(40))
+    id: int = db.Column(db.Integer, primary_key=True)
+    initials: str = db.Column(db.String(10), unique=True, nullable=False)
+    name: str = db.Column(db.String(120), nullable=False)
+    email: str = db.Column(db.String(120), nullable=True)
+    phone: str = db.Column(db.String(40), nullable=True)
+    office: str = db.Column(db.String(40), nullable=False)
 
-    def full_name(self):
-        fn = (self.first_name or '').strip()
-        ln = (self.last_name or '').strip()
-        return (fn + ' ' + ln).strip() or self.initials
+    listings = db.relationship("Listing", back_populates="agent", lazy=True)
 
+    def __repr__(self) -> str:  # pragma: no cover - simple repr helper
+        return f"<Agent {self.initials}>"
+
+
+@dataclass
 class Listing(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    id: int = db.Column(db.Integer, primary_key=True)
+    date: Optional[datetime] = db.Column(db.Date, nullable=True)
+    time: Optional[str] = db.Column(db.String(50), nullable=True)
+    address: str = db.Column(db.String(255), nullable=False)
+    development: Optional[str] = db.Column(db.String(255), nullable=True)
+    suburb: Optional[str] = db.Column(db.String(100), nullable=True)
+    seen: Optional[str] = db.Column(db.String(20), nullable=True)
+    price: Optional[str] = db.Column(db.String(120), nullable=True)
+    agent_initials: Optional[str] = db.Column(db.String(10), nullable=True)
+    office: Optional[str] = db.Column(db.String(40), nullable=True)
+    compliant: Optional[str] = db.Column(db.String(10), nullable=True)
+    property_type: Optional[str] = db.Column(db.String(120), nullable=True)
+    bed: Optional[str] = db.Column(db.String(20), nullable=True)
+    bath: Optional[str] = db.Column(db.String(20), nullable=True)
+    gar: Optional[str] = db.Column(db.String(20), nullable=True)
+    land: Optional[str] = db.Column(db.String(50), nullable=True)
+    access: Optional[str] = db.Column(db.String(50), nullable=True)
+    single_level: Optional[str] = db.Column(db.String(20), nullable=True)
+    rz_zoning: Optional[str] = db.Column(db.String(50), nullable=True)
+    auctioneer: Optional[str] = db.Column(db.String(120), nullable=True)
+    description: Optional[str] = db.Column(db.Text, nullable=True)
+    listing_link: Optional[str] = db.Column(db.String(255), nullable=True)
+    needs_help: bool = db.Column(db.Boolean, default=False)
 
-    date = db.Column(db.String(20))
-    time = db.Column(db.String(20))
-    address = db.Column(db.String(255), index=True)
-    development = db.Column(db.String(255))
-    suburb = db.Column(db.String(120), index=True)
-    seen = db.Column(db.Boolean, default=False)
-    price = db.Column(db.String(50))
-    agent_initials = db.Column(db.String(8), index=True)
-    office = db.Column(db.String(40), index=True)
-    com = db.Column(db.Boolean, default=False)
-    type = db.Column(db.String(40))
-    bed = db.Column(db.Integer)
-    bath = db.Column(db.Integer)
-    gar = db.Column(db.Integer)
-    land = db.Column(db.String(80))
-    access = db.Column(db.String(40))
-    single_level = db.Column(db.Boolean, default=False)
-    rz_zoning = db.Column(db.String(40))
-    auctioneer = db.Column(db.String(120))
+    agent_id: Optional[int] = db.Column(db.Integer, db.ForeignKey("agent.id"), nullable=True)
+    agent = db.relationship("Agent", back_populates="listings", lazy=True)
 
-    description = db.Column(db.Text)
-    listing_url = db.Column(db.String(500))
-    needs_buyers = db.Column(db.Boolean, default=False)
+    images = db.relationship(
+        "ListingImage",
+        back_populates="listing",
+        cascade="all, delete-orphan",
+        lazy=True,
+        order_by="ListingImage.id",
+    )
 
-    agent_id = db.Column(db.Integer, db.ForeignKey('agent.id'))
-    agent = db.relationship('Agent', backref='listings', lazy='joined')
+    def __repr__(self) -> str:  # pragma: no cover - simple repr helper
+        return f"<Listing {self.address}>"
 
+
+@dataclass
 class ListingImage(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    listing_id = db.Column(db.Integer, db.ForeignKey('listing.id'), nullable=False, index=True)
-    path = db.Column(db.String(255), nullable=False)
-    listing = db.relationship('Listing', backref='images', lazy='joined')
+    id: int = db.Column(db.Integer, primary_key=True)
+    filename: str = db.Column(db.String(255), nullable=False)
+    listing_id: int = db.Column(db.Integer, db.ForeignKey("listing.id"), nullable=False)
+
+    listing = db.relationship("Listing", back_populates="images", lazy=True)
+
+    def __repr__(self) -> str:  # pragma: no cover - simple repr helper
+        return f"<ListingImage {self.filename}>"

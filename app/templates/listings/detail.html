@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}{{ listing.address }} | Listing Details{% endblock %}
+{% block content %}
+<a href="{{ url_for('index') }}" class="btn btn-link mb-3">&larr; Back to search</a>
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card shadow-sm">
+      {% if listing.images %}
+        {% set carousel_id = 'listingCarousel' ~ listing.id %}
+        <div id="{{ carousel_id }}" class="carousel slide" data-bs-ride="carousel">
+          <div class="carousel-inner">
+            {% for image in listing.images %}
+              <div class="carousel-item {% if loop.first %}active{% endif %}">
+                <img src="{{ url_for('uploaded_file', filename=image.filename) }}" class="d-block w-100 detail-image" alt="{{ listing.address }} image {{ loop.index }}">
+              </div>
+            {% endfor %}
+          </div>
+          {% if listing.images|length > 1 %}
+            <button class="carousel-control-prev" type="button" data-bs-target="#{{ carousel_id }}" data-bs-slide="prev">
+              <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+              <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#{{ carousel_id }}" data-bs-slide="next">
+              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+              <span class="visually-hidden">Next</span>
+            </button>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="ratio ratio-16x9 bg-light d-flex align-items-center justify-content-center text-muted">
+          No images uploaded for this property yet.
+        </div>
+      {% endif %}
+      <div class="card-body">
+        <h2 class="card-title">{{ listing.address }}</h2>
+        {% if listing.suburb %}<p class="text-muted">{{ listing.suburb }}</p>{% endif %}
+        {% if listing.description %}
+          <p>{{ listing.description }}</p>
+        {% endif %}
+        <dl class="row small">
+          {% if listing.price %}
+            <dt class="col-sm-4">Price guide</dt>
+            <dd class="col-sm-8">{{ listing.price }}</dd>
+          {% endif %}
+          {% if listing.property_type %}
+            <dt class="col-sm-4">Property type</dt>
+            <dd class="col-sm-8">{{ listing.property_type }}</dd>
+          {% endif %}
+          <dt class="col-sm-4">Bedrooms</dt>
+          <dd class="col-sm-8">{{ listing.bed or 'N/A' }}</dd>
+          <dt class="col-sm-4">Bathrooms</dt>
+          <dd class="col-sm-8">{{ listing.bath or 'N/A' }}</dd>
+          <dt class="col-sm-4">Garage</dt>
+          <dd class="col-sm-8">{{ listing.gar or 'N/A' }}</dd>
+          <dt class="col-sm-4">Land size</dt>
+          <dd class="col-sm-8">{{ listing.land or 'N/A' }}</dd>
+          <dt class="col-sm-4">Access</dt>
+          <dd class="col-sm-8">{{ listing.access or 'N/A' }}</dd>
+          <dt class="col-sm-4">Single level</dt>
+          <dd class="col-sm-8">{{ listing.single_level or 'N/A' }}</dd>
+          <dt class="col-sm-4">RZ zoning</dt>
+          <dd class="col-sm-8">{{ listing.rz_zoning or 'N/A' }}</dd>
+          <dt class="col-sm-4">Auctioneer</dt>
+          <dd class="col-sm-8">{{ listing.auctioneer or 'TBC' }}</dd>
+          {% if listing.date %}
+            <dt class="col-sm-4">Auction date</dt>
+            <dd class="col-sm-8">{{ listing.date.strftime('%d %b %Y') }}{% if listing.time %} at {{ listing.time }}{% endif %}</dd>
+          {% endif %}
+          {% if listing.office %}
+            <dt class="col-sm-4">Office</dt>
+            <dd class="col-sm-8">{{ listing.office }}</dd>
+          {% endif %}
+          {% if listing.compliant %}
+            <dt class="col-sm-4">Compliance</dt>
+            <dd class="col-sm-8">{{ listing.compliant }}</dd>
+          {% endif %}
+          {% if listing.listing_link %}
+            <dt class="col-sm-4">External link</dt>
+            <dd class="col-sm-8"><a href="{{ listing.listing_link }}" target="_blank" rel="noopener">View marketing page</a></dd>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Agent details</h5>
+        {% if listing.agent %}
+          <p class="mb-1"><strong>{{ listing.agent.name }}</strong></p>
+          {% if listing.agent.phone %}<p class="mb-1">Phone: <a href="tel:{{ listing.agent.phone }}">{{ listing.agent.phone }}</a></p>{% endif %}
+          {% if listing.agent.email %}<p class="mb-1">Email: <a href="mailto:{{ listing.agent.email }}">{{ listing.agent.email }}</a></p>{% endif %}
+          <p class="mb-0">Office: {{ listing.agent.office }}</p>
+        {% elif listing.agent_initials %}
+          <p>Agent initials: {{ listing.agent_initials }}</p>
+        {% else %}
+          <p class="text-muted">No agent assigned yet.</p>
+        {% endif %}
+        {% if listing.needs_help %}
+          <div class="alert alert-warning mt-3" role="alert">
+            This listing has requested assistance with buyer engagement.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">Key information</h5>
+        <ul class="list-unstyled mb-0 small">
+          <li><strong>Seen:</strong> {{ listing.seen or 'Unknown' }}</li>
+          <li><strong>Development:</strong> {{ listing.development or 'N/A' }}</li>
+          <li><strong>Access:</strong> {{ listing.access or 'N/A' }}</li>
+          <li><strong>RZ zoning:</strong> {{ listing.rz_zoning or 'N/A' }}</li>
+          <li><strong>Single level:</strong> {{ listing.single_level or 'N/A' }}</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
