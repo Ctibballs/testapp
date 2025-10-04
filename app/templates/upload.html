@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">Upload Spreadsheet</h1>
+<form method="post" enctype="multipart/form-data" class="space-y-3 max-w-xl p-4 rounded-xl border border-slate-200 bg-white">
+  <input type="file" name="csv" accept=".csv" required class="block w-full text-sm">
+  <p class="text-xs text-slate-600">Expected headers (exact): date,time,address,development,suburb,seen,price,agent,office,com,type,bed,bath,gar,land,access,single level,RZ zoning,auctioneer</p>
+  <button class="px-3 py-2 rounded-lg bg-sky-600 text-white">Upload</button>
+</form>
+{% endblock %}

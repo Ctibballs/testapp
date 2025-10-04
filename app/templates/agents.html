@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">Manage Agents</h1>
+
+<form method="post" class="grid md:grid-cols-2 gap-3 p-4 rounded-xl border border-slate-200 bg-white mb-6">
+  <input name="initials" placeholder="Initials (e.g., AJ)" required class="rounded-lg border-slate-300">
+  <input name="first_name" placeholder="First name" class="rounded-lg border-slate-300">
+  <input name="last_name" placeholder="Last name" class="rounded-lg border-slate-300">
+  <input name="email" placeholder="Email" class="rounded-lg border-slate-300">
+  <input name="phone" placeholder="Phone" class="rounded-lg border-slate-300">
+  <select name="office" class="rounded-lg border-slate-300">
+    {% for o in offices %}
+      <option value="{{ o }}">{{ o }}</option>
+    {% endfor %}
+  </select>
+  <div class="md:col-span-2">
+    <button class="px-3 py-2 rounded-lg bg-sky-600 text-white">Save Agent</button>
+  </div>
+</form>
+
+<table class="w-full text-sm bg-white rounded-xl border border-slate-200 overflow-hidden">
+  <thead class="bg-slate-100">
+    <tr>
+      <th class="text-left p-2">Initials</th>
+      <th class="text-left p-2">Name</th>
+      <th class="text-left p-2">Email</th>
+      <th class="text-left p-2">Phone</th>
+      <th class="text-left p-2">Office</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for a in agents %}
+    <tr class="border-t">
+      <td class="p-2 font-mono">{{ a.initials }}</td>
+      <td class="p-2">{{ a.full_name() }}</td>
+      <td class="p-2">{{ a.email or "-" }}</td>
+      <td class="p-2">{{ a.phone or "-" }}</td>
+      <td class="p-2">{{ a.office or "-" }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

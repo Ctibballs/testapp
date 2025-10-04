@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">Manage Listings</h1>
+
+<table class="w-full text-sm bg-white rounded-xl border border-slate-200 overflow-hidden">
+  <thead class="bg-slate-100">
+    <tr>
+      <th class="text-left p-2">Address</th>
+      <th class="text-left p-2">Suburb</th>
+      <th class="text-left p-2">Office</th>
+      <th class="text-left p-2">Agent</th>
+      <th class="text-left p-2">Needs Buyers</th>
+      <th class="text-left p-2">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for l in listings %}
+    <tr class="border-t">
+      <td class="p-2">{{ l.address }}</td>
+      <td class="p-2">{{ l.suburb }}</td>
+      <td class="p-2">{{ l.office }}</td>
+      <td class="p-2">
+        {% if l.agent %}{{ l.agent.full_name() }} ({{ l.agent.initials }})
+        {% else %}{{ l.agent_initials or "-" }}{% endif %}
+      </td>
+      <td class="p-2">{{ "Yes" if l.needs_buyers else "No" }}</td>
+      <td class="p-2">
+        <a class="px-2 py-1 rounded border border-slate-200" href="{{ url_for('edit_listing', listing_id=l.id) }}">Edit</a>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
