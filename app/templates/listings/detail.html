@@ -11,7 +11,7 @@
           <div class="carousel-inner">
             {% for image in listing.images %}
               <div class="carousel-item {% if loop.first %}active{% endif %}">
-                <img src="{{ url_for('static', filename='uploads/' ~ image.filename) }}" class="d-block w-100 detail-image" alt="{{ listing.address }} image {{ loop.index }}">
+                <img src="{{ url_for('uploaded_file', filename=image.filename) }}" class="d-block w-100 detail-image" alt="{{ listing.address }} image {{ loop.index }}">
               </div>
             {% endfor %}
           </div>
