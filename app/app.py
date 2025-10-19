@@ -110,7 +110,13 @@ def parse_price(value: str | None) -> int | None:
     if not match:
         return None
     try:
-        return int(float(match.group()) * multiplier)
+        numeric_value = float(match.group())
+        if multiplier == 1:
+            if numeric_value < 10:
+                numeric_value *= 1_000_000
+            elif numeric_value < 10_000:
+                numeric_value *= 1_000
+        return int(numeric_value * multiplier)
     except ValueError:
         return None
 
