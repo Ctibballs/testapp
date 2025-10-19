@@ -137,7 +137,7 @@ def parse_land_size(value: str | None) -> float | None:
 def parse_date(value: str | None) -> datetime | None:
     if not value:
         return None
-    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%d-%b-%y", "%d-%b-%Y"):
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
         try:
             return datetime.strptime(value.strip(), fmt)
         except ValueError:
@@ -340,6 +340,7 @@ def create_app() -> Flask:
     def appraisal():
         records: List[PropertyRecord] = app.config["PROPERTY_DATA"]
         suburbs = sorted({record.suburb for record in records if record.suburb})
+        addresses = sorted({record.address for record in records if record.address})
 
         result = None
         selected_suburb = None
@@ -381,6 +382,7 @@ def create_app() -> Flask:
         return render_template(
             "appraisal.html",
             suburbs=suburbs,
+            addresses=addresses,
             quality_levels=QUALITY_LEVELS,
             quality_sections=QUALITY_SECTIONS,
             features=FEATURE_OPTIONS,
@@ -392,74 +394,39 @@ def create_app() -> Flask:
             selected_features=selected_features,
         )
 
-    def normalise(value: str) -> str:
-        return re.sub(r"[^a-z0-9]", "", value.lower())
-
     @app.get("/api/property-info")
     def property_info():
-        raw_address = request.args.get("address", "").strip()
-        suburb_param = request.args.get("suburb", "").strip()
-        if not raw_address:
-            return jsonify({}), 400
-
-        if "," in raw_address and not suburb_param:
-            address_part, _, suburb_part = raw_address.partition(",")
-            raw_address = address_part.strip()
-            suburb_param = suburb_part.strip()
-
-        address_token = normalise(raw_address)
-        suburb_token = normalise(suburb_param) if suburb_param else ""
-
+        address_query = request.args.get("address", "").strip().lower()
         records: List[PropertyRecord] = app.config["PROPERTY_DATA"]
-
-        def record_matches(record: PropertyRecord) -> bool:
-            if suburb_token and normalise(record.suburb) != suburb_token:
-                return False
-            record_address_token = normalise(record.address)
-            if record_address_token == address_token:
-                return True
-            return address_token and address_token in record_address_token
-
         for record in records:
-            if record_matches(record):
+            if record.address.lower() == address_query:
                 return jsonify(record.serialize())
-
-        for record in records:
-            if suburb_token and normalise(record.suburb) != suburb_token:
-                continue
-            record_address_token = normalise(record.address)
-            if address_token and record_address_token.startswith(address_token):
-                return jsonify(record.serialize())
-
         return jsonify({}), 404
 
     @app.get("/api/properties")
     def property_search():
-        query = request.args.get("q", "").strip()
+        query = request.args.get("q", "").strip().lower()
         if not query:
             return jsonify([])
-
-        query_token = normalise(query)
-        if not query_token:
-            return jsonify([])
-
         records: List[PropertyRecord] = app.config["PROPERTY_DATA"]
-        suggestions: list[dict[str, str]] = []
-        seen: set[tuple[str, str]] = set()
-
-        for record in records:
-            tokenised_address = normalise(record.address)
-            tokenised_combo = normalise(f"{record.address} {record.suburb}")
-            if query_token not in tokenised_address and query_token not in tokenised_combo:
-                continue
-            key = (record.address, record.suburb)
+        matches = [
+            {
+                "address": record.address,
+                "suburb": record.suburb,
+            }
+            for record in records
+            if query in record.address.lower()
+        ]
+        seen = set()
+        deduped = []
+        for match in matches:
+            key = (match["address"], match["suburb"])
             if key in seen:
                 continue
             seen.add(key)
-            suggestions.append({"address": record.address, "suburb": record.suburb})
-            if len(suggestions) >= 10:
+            deduped.append(match)
+            if len(deduped) >= 10:
                 break
-
-        return jsonify(suggestions)
+        return jsonify(deduped)
 
     return app

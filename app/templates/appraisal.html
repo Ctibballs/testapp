@@ -11,7 +11,11 @@
       <div class="form-group full-width">
         <label for="address">Street address</label>
         <input type="text" id="address" name="address" list="address-options" placeholder="e.g. 12 Example Street" autocomplete="off" value="{{ form_data.get('address', '') if form_data else '' }}">
-        <datalist id="address-options"></datalist>
+        <datalist id="address-options">
+          {% for address in addresses %}
+          <option value="{{ address }}">
+          {% endfor %}
+        </datalist>
       </div>
       <div class="form-group">
         <label for="suburb">Suburb</label>
