@@ -1,0 +1,260 @@
+:root {
+  --background: #f4f6fb;
+  --panel: #ffffff;
+  --border: #d7deea;
+  --primary: #2f5dff;
+  --primary-dark: #2144c4;
+  --text: #1a2240;
+  --muted: #5f6b88;
+  --success: #0f9d58;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--text);
+}
+
+h1, h2, h3 {
+  font-weight: 600;
+  color: var(--text);
+}
+
+p {
+  color: var(--muted);
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.site-header {
+  background: linear-gradient(135deg, #2f5dff, #6f86ff);
+  color: white;
+  padding: 2.5rem 0 2rem;
+  box-shadow: 0 4px 20px rgba(47, 93, 255, 0.2);
+}
+
+.site-header h1 {
+  margin: 0 0 0.5rem;
+  font-size: 2.25rem;
+}
+
+.site-header .tagline {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.site-footer {
+  padding: 2rem 0 3rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+.panel {
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 2rem;
+  margin: 2rem 0;
+  box-shadow: 0 15px 45px rgba(15, 23, 42, 0.08);
+}
+
+.section-intro {
+  margin-top: 0.25rem;
+}
+
+.appraisal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.form-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-weight: 500;
+  margin-bottom: 0.35rem;
+}
+
+.form-group input,
+.form-group select {
+  font: inherit;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #f8f9fe;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(47, 93, 255, 0.15);
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.feature-option {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #f8faff;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.feature-option:hover,
+.feature-option:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 6px 18px rgba(47, 93, 255, 0.15);
+  background: #eef3ff;
+}
+
+.feature-option input {
+  margin-top: 0.2rem;
+}
+
+.feature-option strong {
+  display: block;
+  color: var(--text);
+}
+
+.feature-option small {
+  color: var(--muted);
+}
+
+.primary-button {
+  align-self: flex-start;
+  padding: 0.85rem 1.75rem;
+  border-radius: 999px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.primary-button:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px rgba(47, 93, 255, 0.25);
+}
+
+.results .estimate {
+  display: flex;
+  align-items: baseline;
+  gap: 1.5rem;
+}
+
+.estimate-label {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.estimate-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+
+.breakdown ul {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.breakdown li {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  background: #f9fbff;
+}
+
+.breakdown-label {
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.breakdown-value {
+  font-size: 1.1rem;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.breakdown-description {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+thead {
+  background: #eef1fb;
+}
+
+thead th {
+  text-align: left;
+  padding: 0.85rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+tbody td {
+  padding: 0.85rem;
+  border-bottom: 1px solid #e4e8f5;
+}
+
+tbody tr:hover {
+  background: #f5f7ff;
+}
+
+@media (max-width: 720px) {
+  .results .estimate {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .estimate-value {
+    font-size: 2rem;
+  }
+}

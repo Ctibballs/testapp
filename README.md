@@ -1,23 +1,16 @@
-# Real Estate Listings Portal
+# Virtual Home Appraisal
 
-This project provides an internal web portal for managing and searching real estate listings across the Canberra region.
+A lightweight Flask application that helps home owners prepare for a virtual appraisal. It combines known listing data with owner supplied information to build an indicative price estimate and surface relevant comparable sales.
 
-## Features
+## Key features
 
-- Upload listing spreadsheets (CSV) with auction details, compliance status, property specs, and agent initials.
-- Manage agent profiles linked to the initials used in spreadsheets, including contact details and office assignment.
-- Enrich listings with descriptions, links, and image galleries, including a carousel view for agents.
-- Flag listings where agents need help finding a buyer and allow agents to filter by these opportunities.
-- Search listings with suburb/region, property type, office, bedroom/bathroom/garage counts, and price range filters.
-- Open a dedicated property detail page to review full marketing information without leaving the portal.
+- 🔍 **Smart address lookup** – search from recent local listings to auto-fill suburb, bedroom, bathroom and parking details when the property is known.
+- 🏡 **Property detail capture** – record the core property specs including land size and building age, along with feature checklists such as pools, solar, tennis courts and more.
+- ⭐ **Quality scoring** – rate the condition of kitchens, bathrooms, living spaces, exterior and energy efficiency to influence the estimate multiplier.
+- 📊 **Comparable sales context** – display recent suburb sales used to anchor the estimate so owners can sanity check assumptions.
+- 🧮 **Transparent estimate breakdown** – show the baseline price, applied multipliers and adjustments for full visibility of how the indicative value was derived.
 
-## Technology
-
-- Python 3.11+
-- Flask & Flask-SQLAlchemy
-- SQLite database (default)
-
-## Getting Started
+## Getting started
 
 1. **Install dependencies**
 
@@ -27,7 +20,7 @@ This project provides an internal web portal for managing and searching real est
    pip install -r requirements.txt
    ```
 
-2. **Run the application**
+2. **Run the development server**
 
    ```bash
    flask --app app.app run --debug
@@ -35,24 +28,19 @@ This project provides an internal web portal for managing and searching real est
 
    The site will be available at <http://127.0.0.1:5000/>.
 
-3. **Upload listings**
+3. **Try the appraisal workflow**
 
-   - Prepare a CSV file that includes the following column headers exactly as written:
-     `date`, `time`, `address`, `development`, `suburb`, `seen`, `price`, `agent`, `office`, `com`, `type`, `bed`, `bath`, `gar`, `land`, `access`, `single level`, `RZ zoning`, `auctioneer`.
-   - Navigate to **Admin → Upload Spreadsheet** to import listing data. Existing listings are matched by address.
+   - Begin typing an address and choose one of the suggested properties to pre-fill known data.
+   - Update the bedrooms, bathrooms, land size and building age to reflect the current home.
+   - Tick any standout features and rate the quality of key areas of the property.
+   - Submit the form to generate an indicative price and review the comparable sales powering the result.
 
-4. **Manage agents**
+## Data source
 
-   - Go to **Admin → Manage Agents** to create or update agent profiles. Ensure the initials match those found in spreadsheets so listings link correctly.
+The application ships with `listings.csv`, a sample set of ACT property sales used for auto-fill and comparable analysis. You can replace this file with your own dataset provided the CSV contains at least the columns `date`, `address`, `suburb`, `price`, `bed`, `bath`, `gar`, and `land`.
 
-5. **Edit listings**
+## Notes & next steps
 
-   - After importing, open **Admin → Manage Listings** to add descriptions, upload images, paste listing links, and toggle the "needs buyers" flag.
-
-## File uploads
-
-Uploaded images are stored in `app/static/uploads`. Ensure this directory is writable on the deployment server.
-
-## Environment configuration
-
-Set the `SQLALCHEMY_DATABASE_URI` environment variable before launching the app to use an alternative database backend if required.
+- The quality ratings currently drive a simple multiplier; future iterations can introduce separate visuals for each quality tier.
+- Feature adjustments are rule-of-thumb figures for the MVP. Adjust the values in `app/app.py` to match your market assumptions.
+- Integrate third-party APIs (e.g. CoreLogic, Domain) to replace the static CSV with live sales and richer property metadata when credentials are available.
