@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Virtual Home Appraisal{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <h2>Property details</h2>
+  <p class="section-intro">Start with the basics. Search for your address to pull through any known information, then adjust the details as needed.</p>
+  <form method="post" class="appraisal-form" id="appraisal-form">
+    <div class="form-grid">
+      <div class="form-group full-width">
+        <label for="address">Street address</label>
+        <input type="text" id="address" name="address" list="address-options" placeholder="e.g. 12 Example Street" autocomplete="off" value="{{ form_data.get('address', '') if form_data else '' }}">
+        <datalist id="address-options"></datalist>
+      </div>
+      <div class="form-group">
+        <label for="suburb">Suburb</label>
+        <select id="suburb" name="suburb" required>
+          <option value="">Select suburb</option>
+          {% for suburb in suburbs %}
+          <option value="{{ suburb }}" {% if suburb == selected_suburb %}selected{% endif %}>{{ suburb }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="bedrooms">Bedrooms</label>
+        <input type="number" id="bedrooms" name="bedrooms" min="0" step="1" placeholder="3" value="{{ form_data.get('bedrooms', '') if form_data else '' }}">
+      </div>
+      <div class="form-group">
+        <label for="bathrooms">Bathrooms</label>
+        <input type="number" id="bathrooms" name="bathrooms" min="0" step="1" placeholder="2" value="{{ form_data.get('bathrooms', '') if form_data else '' }}">
+      </div>
+      <div class="form-group">
+        <label for="parking">Parking spaces</label>
+        <input type="number" id="parking" name="parking" min="0" step="1" placeholder="2" value="{{ form_data.get('parking', '') if form_data else '' }}">
+      </div>
+      <div class="form-group">
+        <label for="land_size">Land size (m²)</label>
+        <input type="number" id="land_size" name="land_size" min="0" step="1" placeholder="600" value="{{ form_data.get('land_size', '') if form_data else '' }}">
+      </div>
+      <div class="form-group">
+        <label for="building_age">Building age (years)</label>
+        <input type="number" id="building_age" name="building_age" min="0" step="1" placeholder="15" value="{{ form_data.get('building_age', '') if form_data else '' }}">
+      </div>
+    </div>
+
+    <h3>Feature checklist</h3>
+    <p class="section-intro">Add the standout amenities that help your property compete.</p>
+    <div class="feature-grid">
+      {% for feature in features %}
+      <label class="feature-option">
+        <input type="checkbox" name="features" value="{{ feature.id }}" {% if feature.id in selected_features %}checked{% endif %}>
+        <span>
+          <strong>{{ feature.label }}</strong>
+          <small>+{{ currency(feature.adjustment) }} estimate</small>
+        </span>
+      </label>
+      {% endfor %}
+    </div>
+
+    <h3>Quality ratings</h3>
+    <p class="section-intro">Rate each key area of the home. These scores influence the quality multiplier applied to the comparable sales baseline.</p>
+    <div class="form-grid">
+      {% for section in quality_sections %}
+      <div class="form-group">
+        <label for="quality_{{ section.id }}">{{ section.label }}</label>
+        <select id="quality_{{ section.id }}" name="quality_{{ section.id }}">
+          <option value="">Select rating</option>
+          {% for option in quality_levels %}
+          <option value="{{ option.id }}" {% if quality_choices.get(section.id) == option.id %}selected{% endif %}>{{ option.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endfor %}
+    </div>
+
+    <button type="submit" class="primary-button">Generate estimate</button>
+  </form>
+</section>
+
+{% if result %}
+<section class="panel results">
+  <h2>Estimated value</h2>
+  <div class="estimate">
+    <span class="estimate-label">Indicative price</span>
+    <span class="estimate-value">{{ result.estimate_display }}</span>
+  </div>
+  <div class="breakdown">
+    <h3>How we calculated this</h3>
+    <ul>
+      {% for item in result.breakdown %}
+      <li>
+        <div class="breakdown-label">{{ item.label }}</div>
+        <div class="breakdown-value">{{ item.value }}</div>
+        {% if item.description %}
+        <p class="breakdown-description">{{ item.description }}</p>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+
+{% if recent_sales %}
+<section class="panel">
+  <h2>Recent sales in {{ selected_suburb }}</h2>
+  <p class="section-intro">We use these publicly available sales to anchor the estimate. Update the suburb or bedroom count to see different comparables.</p>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Address</th>
+          <th>Beds</th>
+          <th>Baths</th>
+          <th>Parking</th>
+          <th>Land (m²)</th>
+          <th>Price</th>
+          <th>Sale date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sale in recent_sales %}
+        <tr>
+          <td>{{ sale.address }}</td>
+          <td>{{ sale.bedrooms or "–" }}</td>
+          <td>{{ sale.bathrooms or "–" }}</td>
+          <td>{{ sale.parking or "–" }}</td>
+          <td>{{ sale.land_size or "–" }}</td>
+          <td>{{ currency(sale.price) }}</td>
+          <td>{% if sale.date %}{{ sale.date.strftime('%d %b %Y') }}{% else %}–{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+{% endif %}
+{% endblock %}
