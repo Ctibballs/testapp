@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TestApp - Accelerate Your Productivity</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="navbar" aria-label="Main">
+      <div class="container nav-content">
+        <a href="#" class="logo" aria-label="TestApp home">
+          <span class="logo__mark">T</span>estApp
+        </a>
+        <nav id="primary-navigation" class="nav-links" aria-label="Primary">
+          <a href="#features">Features</a>
+          <a href="#testimonials">Testimonials</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+        <a class="btn btn--ghost" href="#cta">Get Started</a>
+        <button
+          class="nav-toggle"
+          aria-label="Toggle navigation menu"
+          aria-expanded="false"
+          aria-controls="primary-navigation"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container hero__content">
+          <div class="hero__text">
+            <span class="eyebrow">Productivity Reimagined</span>
+            <h1>Build better workflows without the busywork.</h1>
+            <p>
+              TestApp brings your tasks, teams, and tools together so you can
+              focus on work that matters. Automate the routine, accelerate the
+              impactful.
+            </p>
+            <form class="hero__form" aria-label="Join waitlist">
+              <label for="email" class="sr-only">Email address</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="Enter your email"
+                required
+              />
+              <button type="submit" class="btn">Join the beta</button>
+            </form>
+            <div class="hero__social-proof" aria-live="polite">
+              <img src="https://dummyimage.com/48x48/111/fff&text=A" alt="Avatar of Ava" />
+              <img src="https://dummyimage.com/48x48/222/fff&text=J" alt="Avatar of Jules" />
+              <img src="https://dummyimage.com/48x48/333/fff&text=K" alt="Avatar of Kai" />
+              <span>Trusted by 4,000+ teams worldwide</span>
+            </div>
+          </div>
+          <div class="hero__visual" role="presentation" aria-hidden="true">
+            <div class="dashboard-card">
+              <div class="dashboard-card__header">
+                <span class="pill pill--green">Live</span>
+                <span class="pill pill--purple">Automations</span>
+              </div>
+              <ul class="dashboard-card__list">
+                <li>
+                  <span class="label">Smart intake</span>
+                  <span class="value">+28%</span>
+                </li>
+                <li>
+                  <span class="label">Cycle time</span>
+                  <span class="value value--down">-41%</span>
+                </li>
+                <li>
+                  <span class="label">Team morale</span>
+                  <span class="value">9.4</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" class="section">
+        <div class="container">
+          <div class="section__header">
+            <span class="eyebrow">Why teams choose TestApp</span>
+            <h2>Everything you need to move fast together.</h2>
+            <p>
+              Powerful automation, delightful collaboration, and actionable
+              insights. TestApp helps high-performing teams ship work that
+              matters.
+            </p>
+          </div>
+          <div class="feature-grid">
+            <article class="feature">
+              <div class="feature__icon">⚡</div>
+              <h3>Automated Workflows</h3>
+              <p>
+                Build no-code automations that trigger on any event. Reduce busy
+                work and keep projects moving even while you sleep.
+              </p>
+            </article>
+            <article class="feature">
+              <div class="feature__icon">🤝</div>
+              <h3>Collaborative Spaces</h3>
+              <p>
+                Organize teams in shared workspaces with conversations, files,
+                and tasks united in one place.
+              </p>
+            </article>
+            <article class="feature">
+              <div class="feature__icon">📊</div>
+              <h3>Insightful Dashboards</h3>
+              <p>
+                Monitor KPIs and burn-down charts in real time. Share reports to
+                keep stakeholders aligned.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="testimonials" class="section section--alt">
+        <div class="container testimonials">
+          <article class="testimonial">
+            <blockquote>
+              “We consolidated six tools into TestApp. Our team moves faster and
+              feels more connected than ever before.”
+            </blockquote>
+            <p class="testimonial__author">
+              <strong>Jules Porter</strong> · Operations Lead, Parallel
+            </p>
+          </article>
+          <article class="testimonial">
+            <blockquote>
+              “Automation that actually empowers our team. TestApp is now our
+              single source of truth for project delivery.”
+            </blockquote>
+            <p class="testimonial__author">
+              <strong>Maya Chen</strong> · CTO, Horizon Labs
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="pricing" class="section">
+        <div class="container">
+          <div class="section__header">
+            <span class="eyebrow">Flexible plans</span>
+            <h2>Choose the plan that fits your team.</h2>
+          </div>
+          <div class="pricing-grid">
+            <article class="plan">
+              <h3>Starter</h3>
+              <p class="plan__price">$12<span>/seat</span></p>
+              <ul>
+                <li>Unlimited projects</li>
+                <li>Standard automations</li>
+                <li>Community support</li>
+              </ul>
+              <a class="btn btn--ghost" href="#cta">Start free trial</a>
+            </article>
+            <article class="plan plan--highlight">
+              <span class="pill pill--green">Popular</span>
+              <h3>Growth</h3>
+              <p class="plan__price">$24<span>/seat</span></p>
+              <ul>
+                <li>Advanced automations</li>
+                <li>Private workspaces</li>
+                <li>Priority support</li>
+              </ul>
+              <a class="btn" href="#cta">Upgrade now</a>
+            </article>
+            <article class="plan">
+              <h3>Enterprise</h3>
+              <p class="plan__price">Let's talk</p>
+              <ul>
+                <li>Custom workflows</li>
+                <li>Dedicated success manager</li>
+                <li>Enterprise security</li>
+              </ul>
+              <a class="btn btn--ghost" href="#cta">Contact sales</a>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="faq" class="section section--alt">
+        <div class="container">
+          <div class="section__header">
+            <span class="eyebrow">FAQ</span>
+            <h2>Your questions answered.</h2>
+          </div>
+          <div class="faq">
+            <details>
+              <summary>How long does setup take?</summary>
+              <p>
+                Most teams are up and running in under an hour with our guided
+                onboarding wizard and ready-made templates.
+              </p>
+            </details>
+            <details>
+              <summary>Do you offer discounts for nonprofits?</summary>
+              <p>
+                Yes! Contact our support team to learn about nonprofit pricing
+                and custom plans.
+              </p>
+            </details>
+            <details>
+              <summary>Can I integrate with my existing tools?</summary>
+              <p>
+                Absolutely. TestApp includes integrations with 80+ popular tools
+                and an open API for custom connections.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer" id="cta">
+      <div class="container footer__content">
+        <div>
+          <h2>Ready to accelerate your team?</h2>
+          <p>
+            Start your 14-day free trial and see how TestApp transforms the way
+            you work together.
+          </p>
+        </div>
+        <a class="btn" href="mailto:hello@testapp.io">Book a demo</a>
+      </div>
+      <p class="footer__legal">© <span id="year"></span> TestApp. All rights reserved.</p>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
