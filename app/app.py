@@ -1,432 +1,221 @@
 from __future__ import annotations
 
-import csv
+import json
+import os
 import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from statistics import mean
-from typing import Iterable, List, Sequence
+from typing import Any, Dict, List, Optional
+from uuid import uuid4
 
 from flask import Flask, jsonify, render_template, request
 
-DATA_PATH = Path(__file__).resolve().parent.parent / "listings.csv"
 
-QUALITY_LEVELS = [
-    {"id": "original_poor", "label": "Original – needs work", "multiplier": 0.90},
-    {"id": "original_sound", "label": "Original – good condition", "multiplier": 1.00},
-    {"id": "updated", "label": "Updated", "multiplier": 1.05},
-    {"id": "renovated_premium", "label": "Renovated with premium finishes", "multiplier": 1.12},
-]
-
-QUALITY_SECTIONS = [
-    {"id": "kitchen", "label": "Kitchen"},
-    {"id": "bathrooms", "label": "Bathrooms"},
-    {"id": "living_areas", "label": "Living areas"},
-    {"id": "exterior", "label": "Exterior"},
-    {"id": "energy", "label": "Energy efficiency"},
-]
-
-FEATURE_OPTIONS = [
-    {"id": "pool", "label": "Swimming pool", "adjustment": 35000},
-    {"id": "tennis", "label": "Tennis court", "adjustment": 45000},
-    {"id": "solar", "label": "Solar panels", "adjustment": 12000},
-    {"id": "batteries", "label": "Home battery system", "adjustment": 18000},
-    {"id": "ducted_ac", "label": "Ducted A/C", "adjustment": 8000},
-    {"id": "split_ac", "label": "Split system A/C", "adjustment": 4000},
-    {"id": "double_glazing", "label": "Double glazing", "adjustment": 9000},
-    {"id": "water_tank", "label": "Rainwater tank", "adjustment": 3000},
-]
+BASE_DIR = Path(__file__).resolve().parent
+SUBURB_DATA_PATH = BASE_DIR / "suburb_stats.json"
+LEADS_STORE_PATH = BASE_DIR / "leads.json"
+EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+PHONE_REGEX = re.compile(r"^[+\d\s()-]{6,}$")
 
 
 @dataclass
-class PropertyRecord:
-    address: str
+class SuburbStats:
+    state: str
     suburb: str
-    bedrooms: int | None
-    bathrooms: int | None
-    parking: int | None
-    price: int | None
-    land_size: float | None
-    date: datetime | None
+    postcode: str
+    median_house_price_12m: int
+    median_unit_price_12m: int
+    num_house_sales_12m: int
+    num_unit_sales_12m: int
 
-    def serialize(self) -> dict[str, str | int | float | None]:
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "SuburbStats":
+        return cls(
+            state=data["state"],
+            suburb=data["suburb"],
+            postcode=str(data["postcode"]),
+            median_house_price_12m=int(data["median_house_price_12m"]),
+            median_unit_price_12m=int(data["median_unit_price_12m"]),
+            num_house_sales_12m=int(data.get("num_house_sales_12m", 0)),
+            num_unit_sales_12m=int(data.get("num_unit_sales_12m", 0)),
+        )
+
+    def serialize(self) -> Dict[str, Any]:
         return {
-            "address": self.address,
+            "state": self.state,
             "suburb": self.suburb,
-            "bedrooms": self.bedrooms,
-            "bathrooms": self.bathrooms,
-            "parking": self.parking,
-            "price": self.price,
-            "land_size": self.land_size,
-            "date": self.date.isoformat() if self.date else None,
+            "postcode": self.postcode,
+            "medianHousePrice": self.median_house_price_12m,
+            "medianUnitPrice": self.median_unit_price_12m,
+            "numHouseSales12m": self.num_house_sales_12m,
+            "numUnitSales12m": self.num_unit_sales_12m,
         }
 
 
-def parse_int(value: str | None) -> int | None:
-    if value is None or value == "":
-        return None
-    try:
-        return int(float(value))
-    except (TypeError, ValueError):
-        return None
-
-
-def parse_float(value: str | None) -> float | None:
-    if value is None or value == "":
-        return None
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return None
-
-
-def parse_price(value: str | None) -> int | None:
-    if not value:
-        return None
-    cleaned = value.strip().lower()
-    cleaned = cleaned.replace("$", "").replace(",", "")
-    cleaned = cleaned.replace("auction", "")
-    cleaned = cleaned.replace("guide", "")
-    cleaned = cleaned.replace("prior", "")
-    cleaned = cleaned.replace("offers", "")
-    cleaned = cleaned.replace("auction", "")
-    cleaned = cleaned.replace("tba", "")
-    cleaned = cleaned.strip()
-    if not cleaned:
-        return None
-    multiplier = 1
-    if cleaned.endswith("m"):
-        multiplier = 1_000_000
-        cleaned = cleaned[:-1]
-    elif cleaned.endswith("mil"):
-        multiplier = 1_000_000
-        cleaned = cleaned[:-3]
-    elif cleaned.endswith("k"):
-        multiplier = 1_000
-        cleaned = cleaned[:-1]
-    cleaned = cleaned.strip("+").strip()
-    match = re.search(r"\d+(?:\.\d+)?", cleaned)
-    if not match:
-        return None
-    try:
-        numeric_value = float(match.group())
-        if multiplier == 1:
-            if numeric_value < 10:
-                numeric_value *= 1_000_000
-            elif numeric_value < 10_000:
-                numeric_value *= 1_000
-        return int(numeric_value * multiplier)
-    except ValueError:
-        return None
-
-
-def parse_land_size(value: str | None) -> float | None:
-    if not value:
-        return None
-    cleaned = value.lower().replace(",", "")
-    match = re.search(r"\d+(?:\.\d+)?", cleaned)
-    if not match:
-        return None
-    try:
-        return float(match.group())
-    except ValueError:
-        return None
-
-
-def parse_date(value: str | None) -> datetime | None:
-    if not value:
-        return None
-    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
-        try:
-            return datetime.strptime(value.strip(), fmt)
-        except ValueError:
-            continue
-    return None
-
-
-def load_property_records() -> list[PropertyRecord]:
-    records: list[PropertyRecord] = []
-    with DATA_PATH.open(encoding="utf-8-sig", newline="") as handle:
-        reader = csv.DictReader(handle)
-        for row in reader:
-            records.append(
-                PropertyRecord(
-                    address=row.get("address", "").strip(),
-                    suburb=row.get("suburb", "").strip(),
-                    bedrooms=parse_int(row.get("bed")),
-                    bathrooms=parse_int(row.get("bath")),
-                    parking=parse_int(row.get("gar")),
-                    price=parse_price(row.get("price")),
-                    land_size=parse_land_size(row.get("land")),
-                    date=parse_date(row.get("date")),
-                )
-            )
-    return records
-
-
-def currency(value: float | int | None) -> str:
-    if value is None:
-        return "N/A"
-    return f"${value:,.0f}"
-
-
-def average_price(records: Iterable[PropertyRecord]) -> float | None:
-    prices = [record.price for record in records if record.price]
-    if not prices:
-        return None
-    return mean(prices)
-
-
-def average_land(records: Iterable[PropertyRecord]) -> float | None:
-    land_values = [record.land_size for record in records if record.land_size]
-    if not land_values:
-        return None
-    return mean(land_values)
-
-
-def find_recent_sales(records: Sequence[PropertyRecord], suburb: str, limit: int = 5) -> list[PropertyRecord]:
-    suburb_records = [r for r in records if r.suburb.lower() == suburb.lower() and r.price]
-    suburb_records.sort(key=lambda r: (r.date or datetime.min), reverse=True)
-    return suburb_records[:limit]
-
-
-def select_comparables(records: Sequence[PropertyRecord], suburb: str, bedrooms: int | None) -> list[PropertyRecord]:
-    suburb_records = [r for r in records if r.suburb.lower() == suburb.lower() and r.price]
-    if bedrooms is not None:
-        exact = [r for r in suburb_records if r.bedrooms == bedrooms]
-        if exact:
-            suburb_records = exact
-    return suburb_records
-
-
-def calculate_estimate(
-    *,
-    all_records: Sequence[PropertyRecord],
-    suburb: str,
-    bedrooms: int | None,
-    bathrooms: int | None,
-    parking: int | None,
-    land_size: float | None,
-    building_age: int | None,
-    quality_choices: dict[str, str],
-    selected_features: list[str],
-) -> dict[str, object]:
-    comparables = select_comparables(all_records, suburb, bedrooms) if suburb else []
-    base_price = average_price(comparables) or average_price(all_records)
-    if base_price is None:
-        base_price = 0
-
-    quality_map = {level["id"]: level["multiplier"] for level in QUALITY_LEVELS}
-    selected_multipliers = [
-        quality_map.get(choice, 1.0)
-        for choice in quality_choices.values()
-        if choice in quality_map
-    ]
-    quality_multiplier = mean(selected_multipliers) if selected_multipliers else 1.0
-
-    feature_adjustments = {
-        option["id"]: option["adjustment"] for option in FEATURE_OPTIONS
-    }
-    feature_bonus = sum(feature_adjustments.get(feat, 0) for feat in selected_features)
-
-    land_adjustment = 0.0
-    if land_size:
-        comparable_land_avg = average_land(comparables)
-        if comparable_land_avg:
-            land_adjustment = (land_size - comparable_land_avg) * 180
-
-    bathroom_bonus = 0
-    if bathrooms is not None:
-        comparable_bath_avg = mean(
-            [r.bathrooms for r in comparables if r.bathrooms is not None]
-        ) if comparables else None
-        if comparable_bath_avg is not None and bathrooms > comparable_bath_avg:
-            bathroom_bonus = (bathrooms - comparable_bath_avg) * 8000
-
-    parking_bonus = 0
-    if parking is not None:
-        comparable_parking_avg = mean(
-            [r.parking for r in comparables if r.parking is not None]
-        ) if comparables else None
-        if comparable_parking_avg is not None and parking > comparable_parking_avg:
-            parking_bonus = (parking - comparable_parking_avg) * 6000
-
-    age_adjustment = 0
-    if building_age is not None:
-        if building_age <= 5:
-            age_adjustment = 25000
-        elif building_age <= 15:
-            age_adjustment = 12000
-        elif building_age >= 40:
-            age_adjustment = -18000
-        elif building_age >= 25:
-            age_adjustment = -9000
-
-    estimate_value = (
-        base_price * quality_multiplier
-        + feature_bonus
-        + land_adjustment
-        + bathroom_bonus
-        + parking_bonus
-        + age_adjustment
-    )
-    estimate_value = max(0, estimate_value)
-
-    breakdown = [
-        {"label": "Comparable sales baseline", "value": currency(base_price)},
-        {
-            "label": "Quality multiplier",
-            "value": f"× {quality_multiplier:.2f}",
-            "description": "Average of the quality ratings selected for the property.",
-        },
-        {
-            "label": "Feature adjustments",
-            "value": currency(feature_bonus),
-            "description": "Additional value based on selected amenities.",
-        },
-    ]
-
-    if land_adjustment:
-        breakdown.append(
-            {
-                "label": "Land size adjustment",
-                "value": currency(land_adjustment),
-                "description": "Difference compared to typical land size for similar homes.",
-            }
-        )
-    if bathroom_bonus:
-        breakdown.append(
-            {
-                "label": "Bathroom count adjustment",
-                "value": currency(bathroom_bonus),
-                "description": "Based on additional bathrooms compared to recent sales.",
-            }
-        )
-    if parking_bonus:
-        breakdown.append(
-            {
-                "label": "Parking adjustment",
-                "value": currency(parking_bonus),
-                "description": "Based on garage/car space availability.",
-            }
-        )
-    if age_adjustment:
-        breakdown.append(
-            {
-                "label": "Building age adjustment",
-                "value": currency(age_adjustment),
-                "description": "Reflects the relative age of improvements compared to newer or older stock.",
-            }
-        )
-
-    return {
-        "estimate": estimate_value,
-        "estimate_display": currency(estimate_value),
-        "breakdown": breakdown,
-        "comparables": comparables,
-    }
+def load_suburb_stats() -> List[SuburbStats]:
+    with SUBURB_DATA_PATH.open(encoding="utf-8") as handle:
+        data = json.load(handle)
+    return [SuburbStats.from_dict(item) for item in data]
 
 
 def create_app() -> Flask:
     app = Flask(__name__)
-    app.config["PROPERTY_DATA"] = load_property_records()
+    suburb_stats = load_suburb_stats()
+    leads: List[Dict[str, Any]] = []
 
-    @app.context_processor
-    def inject_helpers():
-        return {"currency": currency}
+    if LEADS_STORE_PATH.exists():
+        try:
+            leads_data = json.loads(LEADS_STORE_PATH.read_text(encoding="utf-8"))
+            if isinstance(leads_data, list):
+                leads.extend(leads_data)
+        except json.JSONDecodeError:
+            pass
 
-    @app.route("/", methods=["GET", "POST"])
-    def appraisal():
-        records: List[PropertyRecord] = app.config["PROPERTY_DATA"]
-        suburbs = sorted({record.suburb for record in records if record.suburb})
-        addresses = sorted({record.address for record in records if record.address})
+    def persist_leads() -> None:
+        LEADS_STORE_PATH.write_text(json.dumps(leads, indent=2), encoding="utf-8")
 
-        result = None
-        selected_suburb = None
-        recent_sales: list[PropertyRecord] = []
-        form_data = None
-        quality_choices: dict[str, str] = {}
-        selected_features: list[str] = []
+    def find_stats(suburb: str, state: str, postcode: str) -> Optional[SuburbStats]:
+        target = (suburb or "").strip().lower()
+        target_state = (state or "").strip().lower()
+        target_postcode = (postcode or "").strip()
+        for record in suburb_stats:
+            if (
+                record.suburb.lower() == target
+                and record.state.lower() == target_state
+                and record.postcode == target_postcode
+            ):
+                return record
+        # allow postcode + state match as fallback
+        for record in suburb_stats:
+            if record.state.lower() == target_state and record.postcode == target_postcode:
+                return record
+        return None
 
-        if request.method == "POST":
-            form = request.form
-            form_data = form
-            selected_suburb = form.get("suburb", "").strip()
-            bedrooms = parse_int(form.get("bedrooms"))
-            bathrooms = parse_int(form.get("bathrooms"))
-            parking = parse_int(form.get("parking"))
-            land_size = parse_float(form.get("land_size"))
-            building_age = parse_int(form.get("building_age"))
-            quality_choices = {
-                section["id"]: form.get(f"quality_{section['id']}")
-                for section in QUALITY_SECTIONS
-            }
-            selected_features = form.getlist("features")
+    def derive_estimate(record: SuburbStats, payload: Dict[str, Any]) -> Dict[str, Any]:
+        property_type = payload.get("propertyType", "house")
+        base_price = (
+            record.median_unit_price_12m if property_type == "unit" else record.median_house_price_12m
+        )
+        # Start with a ±5% band
+        low_multiplier = 0.95
+        high_multiplier = 1.05
 
-            result = calculate_estimate(
-                all_records=records,
-                suburb=selected_suburb,
-                bedrooms=bedrooms,
-                bathrooms=bathrooms,
-                parking=parking,
-                land_size=land_size,
-                building_age=building_age,
-                quality_choices=quality_choices,
-                selected_features=selected_features,
+        bedrooms = payload.get("bedrooms")
+        if isinstance(bedrooms, (int, float)):
+            # simple +/- 1.5% adjustment per bedroom away from 3
+            low_multiplier += (bedrooms - 3) * 0.015
+            high_multiplier += (bedrooms - 3) * 0.018
+
+        land_size = payload.get("landSize")
+        if isinstance(land_size, (int, float)) and property_type == "house":
+            # Houses on larger blocks get a small boost, capped at ±4%
+            block_adjustment = max(min((land_size - 450) / 450, 0.8), -0.8)
+            low_multiplier += block_adjustment * 0.02
+            high_multiplier += block_adjustment * 0.025
+
+        estimate_low = max(int(base_price * low_multiplier), int(base_price * 0.7))
+        estimate_high = int(base_price * high_multiplier)
+        estimate_mid = int((estimate_low + estimate_high) / 2)
+
+        sales_volume = (
+            record.num_unit_sales_12m if property_type == "unit" else record.num_house_sales_12m
+        )
+        if sales_volume >= 160:
+            confidence = "high"
+        elif sales_volume >= 60:
+            confidence = "medium"
+        else:
+            confidence = "low"
+
+        return {
+            "estimateLow": estimate_low,
+            "estimateHigh": estimate_high,
+            "estimateMid": estimate_mid,
+            "confidence": confidence,
+            "propertyType": property_type,
+            "suburb": record.suburb,
+            "state": record.state,
+            "postcode": record.postcode,
+            "suburbStats": record.serialize(),
+        }
+
+    @app.route("/")
+    def index() -> str:
+        api_key = os.getenv("GOOGLE_MAPS_API_KEY", "")
+        return render_template("index.html", google_api_key=api_key)
+
+    @app.post("/api/estimate")
+    def estimate() -> Any:
+        payload = request.get_json(force=True, silent=True) or {}
+        required_fields = ("fullAddress", "suburb", "state", "postcode")
+        missing = [field for field in required_fields if not payload.get(field)]
+        if missing:
+            return (
+                jsonify({"error": f"Missing required fields: {', '.join(missing)}"}),
+                400,
             )
 
-            if selected_suburb:
-                recent_sales = find_recent_sales(records, selected_suburb)
+        record = find_stats(payload["suburb"], payload["state"], str(payload["postcode"]))
+        if not record:
+            # pick a safe fallback using the median of all suburbs
+            fallback = suburb_stats[0]
+            record = fallback
 
-        return render_template(
-            "appraisal.html",
-            suburbs=suburbs,
-            addresses=addresses,
-            quality_levels=QUALITY_LEVELS,
-            quality_sections=QUALITY_SECTIONS,
-            features=FEATURE_OPTIONS,
-            result=result,
-            selected_suburb=selected_suburb,
-            recent_sales=recent_sales,
-            form_data=form_data,
-            quality_choices=quality_choices,
-            selected_features=selected_features,
-        )
+        bedrooms_value = payload.get("bedrooms")
+        land_size_value = payload.get("landSize")
+        if bedrooms_value is not None:
+            try:
+                payload["bedrooms"] = int(bedrooms_value)
+            except (TypeError, ValueError):
+                payload["bedrooms"] = None
+        if land_size_value is not None:
+            try:
+                payload["landSize"] = float(land_size_value)
+            except (TypeError, ValueError):
+                payload["landSize"] = None
 
-    @app.get("/api/property-info")
-    def property_info():
-        address_query = request.args.get("address", "").strip().lower()
-        records: List[PropertyRecord] = app.config["PROPERTY_DATA"]
-        for record in records:
-            if record.address.lower() == address_query:
-                return jsonify(record.serialize())
-        return jsonify({}), 404
+        estimate_payload = derive_estimate(record, payload)
+        return jsonify(estimate_payload)
 
-    @app.get("/api/properties")
-    def property_search():
-        query = request.args.get("q", "").strip().lower()
-        if not query:
-            return jsonify([])
-        records: List[PropertyRecord] = app.config["PROPERTY_DATA"]
-        matches = [
-            {
-                "address": record.address,
-                "suburb": record.suburb,
-            }
-            for record in records
-            if query in record.address.lower()
-        ]
-        seen = set()
-        deduped = []
-        for match in matches:
-            key = (match["address"], match["suburb"])
-            if key in seen:
-                continue
-            seen.add(key)
-            deduped.append(match)
-            if len(deduped) >= 10:
-                break
-        return jsonify(deduped)
+    @app.post("/api/leads")
+    def create_lead() -> Any:
+        payload = request.get_json(force=True, silent=True) or {}
+        if not payload.get("emailEstimate") and not payload.get("connectToAgent"):
+            return jsonify({"error": "At least one option must be selected."}), 400
+
+        errors = []
+        user_email = payload.get("userEmail", "").strip()
+        user_phone = payload.get("userPhone", "").strip()
+
+        if user_email and not EMAIL_REGEX.match(user_email):
+            errors.append("Please provide a valid email address.")
+        if user_phone and not PHONE_REGEX.match(user_phone):
+            errors.append("Please provide a valid phone number.")
+        if errors:
+            return jsonify({"error": " ".join(errors)}), 400
+
+        lead_entry = {
+            "id": str(uuid4()),
+            "createdAt": datetime.utcnow().isoformat() + "Z",
+            "fullAddress": payload.get("fullAddress"),
+            "suburb": payload.get("suburb"),
+            "state": payload.get("state"),
+            "postcode": payload.get("postcode"),
+            "propertyType": payload.get("propertyType"),
+            "bedrooms": payload.get("bedrooms"),
+            "landSize": payload.get("landSize"),
+            "estimateLow": payload.get("estimateLow"),
+            "estimateHigh": payload.get("estimateHigh"),
+            "estimateMid": payload.get("estimateMid"),
+            "emailEstimate": bool(payload.get("emailEstimate")),
+            "connectToAgent": bool(payload.get("connectToAgent")),
+            "userName": payload.get("userName"),
+            "userEmail": user_email or None,
+            "userPhone": user_phone or None,
+        }
+        leads.append(lead_entry)
+        persist_leads()
+        return jsonify({"status": "ok"})
 
     return app

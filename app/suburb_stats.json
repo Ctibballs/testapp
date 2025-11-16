@@ -1,0 +1,56 @@
+[
+  {
+    "state": "NSW",
+    "suburb": "Newtown",
+    "postcode": "2042",
+    "median_house_price_12m": 1250000,
+    "median_unit_price_12m": 810000,
+    "num_house_sales_12m": 148,
+    "num_unit_sales_12m": 92
+  },
+  {
+    "state": "NSW",
+    "suburb": "Bondi",
+    "postcode": "2026",
+    "median_house_price_12m": 2850000,
+    "median_unit_price_12m": 1500000,
+    "num_house_sales_12m": 86,
+    "num_unit_sales_12m": 210
+  },
+  {
+    "state": "VIC",
+    "suburb": "Fitzroy",
+    "postcode": "3065",
+    "median_house_price_12m": 1600000,
+    "median_unit_price_12m": 900000,
+    "num_house_sales_12m": 74,
+    "num_unit_sales_12m": 120
+  },
+  {
+    "state": "VIC",
+    "suburb": "Richmond",
+    "postcode": "3121",
+    "median_house_price_12m": 1450000,
+    "median_unit_price_12m": 860000,
+    "num_house_sales_12m": 112,
+    "num_unit_sales_12m": 168
+  },
+  {
+    "state": "QLD",
+    "suburb": "Taringa",
+    "postcode": "4068",
+    "median_house_price_12m": 1200000,
+    "median_unit_price_12m": 650000,
+    "num_house_sales_12m": 59,
+    "num_unit_sales_12m": 95
+  },
+  {
+    "state": "SA",
+    "suburb": "Norwood",
+    "postcode": "5067",
+    "median_house_price_12m": 1150000,
+    "median_unit_price_12m": 640000,
+    "num_house_sales_12m": 68,
+    "num_unit_sales_12m": 88
+  }
+]
